@@ -1,0 +1,7 @@
+setuptools
+wheel
+numpy
+requests
+sentencepiece
+torch
+tqdm

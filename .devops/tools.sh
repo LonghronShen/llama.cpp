@@ -20,6 +20,13 @@ elif [[ $arg1 == '--download' || $arg1 == '-d' ]]; then
     python3 ./download-pth.py $arg2
 elif [[ $arg1 == '--all-in-one' || $arg1 == '-a' ]]; then
     echo "Downloading model..."
+    aria2c \
+        --https-proxy=$HTTPS_PROXY \
+        --http-proxy=$HTTP_PROXY \
+        --no-proxy=$NO_PROXY \
+        --input-file ./models/links.txt \
+        --dir ./models \
+        --continue
     python3 ./download-pth.py "$1" "$2"
     echo "Converting PTH to GGML..."
     for i in `ls $1/$2/ggml-model-f16.bin*`; do
