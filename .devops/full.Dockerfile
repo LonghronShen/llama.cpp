@@ -1,17 +1,33 @@
 ARG UBUNTU_VERSION=22.04
 
-FROM ubuntu:$UBUNTU_VERSION as build
+FROM ubuntu:$UBUNTU_VERSION as base
 
-RUN apt-get update && \
-    apt-get install -y build-essential python3 python3-pip aria2
+RUN apt update && \
+    apt install -y build-essential ninja-build python3 python3-pip aria2 && \
+    pip3 install --upgrade pip setuptools wheel cmake
 
-RUN pip install --upgrade pip setuptools wheel \
-    && pip install numpy requests sentencepiece torch tqdm
+FROM base as build
+
+RUN apt update && \
+    apt install -y build-essential ninja-build python3 python3-pip && \
+    pip3 install cmake
 
 WORKDIR /app
 
 COPY . .
 
-RUN make
+RUN mkdir -p build && \
+    cd build && \
+    cmake -G Ninja .. && \
+    cmake --build .
+
+FROM base as runtime
+
+WORKDIR /app
+
+COPY . .
+COPY --from=build /app/build/bin/* .
+
+RUN pip3 install -r requirements.txt
 
 ENTRYPOINT ["/app/.devops/tools.sh"]
