@@ -19,24 +19,30 @@ elif [[ $arg1 == '--run' || $arg1 == '-r' ]]; then
 elif [[ $arg1 == '--download' || $arg1 == '-d' ]]; then
     python3 ./download-pth.py $arg2
 elif [[ $arg1 == '--all-in-one' || $arg1 == '-a' ]]; then
-    echo "Downloading model..."
-    aria2c \
-        --https-proxy=$HTTPS_PROXY \
-        --http-proxy=$HTTP_PROXY \
-        --no-proxy=$NO_PROXY \
-        --input-file ./models/links.txt \
-        --dir ./models \
-        --continue
+    echo "Downloading model '$2' in '$1' ..."
+    bash ./download_models.sh
+
     python3 ./download-pth.py "$1" "$2"
     echo "Converting PTH to GGML..."
-    for i in `ls $1/$2/ggml-model-f16.bin*`; do
-        if [ -f "${i/f16/q4_0}" ]; then
-            echo "Skip model quantization, it already exists: ${i/f16/q4_0}"
-        else
-            echo "Converting PTH to GGML: $i into ${i/f16/q4_0}..."
-            ./quantize "$i" "${i/f16/q4_0}" 2
-        fi
-    done
+
+    modelDir="$1/$2"
+    echo "Processing model '${modelDir}'..."
+    modelFile="${modelDir}/ggml-model-f16.bin"
+    echo "$modelFile"
+    if [ -f "$modelFile" ]; then
+        echo "Skip model conversion, it already exists: ${modelFile}"
+    else
+        echo "Converting PTH to GGML: $2 into ${modelFile}..."
+        python3 convert-pth-to-ggml.py "$1/$2/" 1
+    fi
+
+    modelFile="${modelDir}/ggml-model-q4_0.bin"
+    if [ -f "$modelFile" ]; then
+        echo "Skip model quantization, it already exists: ${modelFile}"
+    else
+        echo "Converting f16 to q4_0: $i into ${modelFile}..."
+        python3 quantize.py $2
+    fi
 else
     echo "Unknown command: $arg1"
     echo "Available commands: "
